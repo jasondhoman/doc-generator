@@ -76,15 +76,12 @@ export function WordEndpointDocumentation({ document }: { document: EndpointDocu
     .filter(parameter => parameter.location.toLowerCase() === 'header')
     .map(parameter => [parameter.name, parameter.type]));
   const requestBody = jsonObject(document.requestBodies.map(body => [body.type, body.schema]));
-  const responseTypes = document.responses.map(response => [`${response.status}`, response.schemas.map(schema => schema.type).join(', ') || '—']);
-
   const rows = [
     { label: 'Endpoint Path', value: document.endpoint.replace(/^[A-Z]+\s+/, '') },
     { label: 'HTTP Method', value: document.endpoint.split(' ')[0] },
     { label: 'Payload', value: payload },
     { label: 'Request Header', value: requestHeaders },
     { label: 'Request Body', value: requestBody },
-    { label: 'Response', value: responseTypes.map(([status, type]) => `${status}: ${type}`).join('; ') },
   ];
 
   return (
@@ -102,6 +99,17 @@ export function WordEndpointDocumentation({ document }: { document: EndpointDocu
           </li>
         ))}
       </ul>
+      <strong>Response:</strong>
+      {document.responses.map(response => (
+        <div key={response.status}>
+          <p>{response.status}</p>
+          {response.schemas.map((schema, index) => (
+            schema.example === undefined
+              ? null
+              : <pre key={`${schema.type}-${index}`}>{JSON.stringify(schema.example, null, 2)}</pre>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -115,7 +123,12 @@ export function renderEndpointDocumentation(document: OpenApiDocument, item: Col
     .filter(parameter => parameter.location.toLowerCase() === 'header')
     .map(parameter => [parameter.name, parameter.type]));
   const requestBody = jsonObject(endpointDocument.requestBodies.map(body => [body.type, body.schema]));
-  const responseEntries = endpointDocument.responses.map(response => `${response.status}: ${response.schemas.map(schema => schema.type).join(', ') || '—'}`);
+  const responseEntries = endpointDocument.responses.map((response) => {
+    const examples = response.schemas
+      .filter(schema => schema.example !== undefined)
+      .map(schema => JSON.stringify(schema.example, null, 2));
+    return `${response.status}${examples.length ? `\n${examples.join('\n')}` : ''}`;
+  });
 
   const lines = [
     endpointDocument.description,
