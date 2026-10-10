@@ -1,6 +1,6 @@
 # API documentation generator
 
-Copy OpenAPI JSON, YAML, or YML files into `openapi/`. The React site generates an API selector and reference pages for each file, including endpoints, parameters, request bodies, response schemas, and responses. Schema labels use TypeScript-style types, so OpenAPI `integer`, `int32`, and `int64` values display as `number`.
+Copy OpenAPI JSON, YAML, or YML files into `openapi/`, including nested directories. Each directory is a project group in the API selector—for example, `openapi/store/catalog.yaml` appears under **store**. The React site generates reference pages for each file, including endpoints, parameters, request bodies, response schemas, and responses. Schema labels use TypeScript-style types, so OpenAPI `integer`, `int32`, and `int64` values display as `number`.
 
 Each endpoint has a **Copy for Word** button. It copies rich HTML for pasting into Microsoft Word and a plain-text equivalent for other applications.
 
@@ -17,4 +17,4 @@ The schema index is regenerated when `pnpm dev` or `pnpm build` runs. To regener
 pnpm docs
 ```
 
-`openapi/example.yaml` is a working example and can be removed once you add your schemas.
+`openapi/example-store/example.yaml` is a working grouped example and can be removed once you add your schemas.

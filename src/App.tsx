@@ -40,7 +40,7 @@ interface OpenApiDocument extends Record<string, unknown> {
   info?: { title?: string; version?: string; description?: string }
   paths?: Record<string, PathItem>
 }
-interface GeneratedDocument { name: string; document: OpenApiDocument }
+interface GeneratedDocument { name: string; project: string; document: OpenApiDocument }
 interface CollectedOperation {
   path: string
   method: HttpMethod
@@ -58,7 +58,10 @@ function isOpenApiDocument(value: unknown): value is OpenApiDocument {
 }
 
 function isGeneratedDocument(value: unknown): value is GeneratedDocument {
-  return isRecord(value) && typeof value.name === 'string' && isOpenApiDocument(value.document)
+  return isRecord(value)
+    && typeof value.name === 'string'
+    && typeof value.project === 'string'
+    && isOpenApiDocument(value.document)
 }
 
 function resolveRef<T extends Reference>(document: OpenApiDocument, value: T | undefined): T | undefined {
@@ -230,6 +233,11 @@ function App() {
 
   const selected = documents.find(({ name }) => name === selectedName)
   const operations = useMemo(() => selected ? collectOperations(selected.document) : [], [selected])
+  const projectGroups = useMemo(() => documents.reduce<Record<string, GeneratedDocument[]>>((groups, document) => {
+    groups[document.project] ??= []
+    groups[document.project].push(document)
+    return groups
+  }, {}), [documents])
   if (error) return <main className="empty-state"><h1>Documentation could not load</h1><p>{error}</p></main>
   if (!selected) return <main className="empty-state"><p className="eyebrow">OpenAPI documentation</p><h1>No schemas yet</h1><p>Add a <code>.json</code>, <code>.yaml</code>, or <code>.yml</code> file to <code>openapi/</code>, then restart the dev server.</p></main>
 
@@ -247,7 +255,7 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header><a className="brand" href="/">API Docs</a><label><span className="sr-only">Select API</span><select value={selectedName} onChange={selectDocument}>{documents.map(({ name, document }) => <option key={name} value={name}>{document.info?.title ?? name}</option>)}</select></label></header>
+      <header><a className="brand" href="/">API Docs</a><label><span className="sr-only">Select API</span><select value={selectedName} onChange={selectDocument}>{Object.entries(projectGroups).map(([project, projectDocuments]) => <optgroup key={project} label={project}>{projectDocuments.map(({ name, document }) => <option key={name} value={name}>{document.info?.title ?? name}</option>)}</optgroup>)}</select></label></header>
       <div className="layout">
         <aside><p className="sidebar-title">Endpoints</p><nav>{operations.map((item) => <a href={`#${operationAnchor(item)}`} key={`${item.method}-${item.path}`}><span className={`method method-${item.method}`}>{item.method}</span><span>{item.operation.summary ?? item.path}</span></a>)}</nav></aside>
         <main>

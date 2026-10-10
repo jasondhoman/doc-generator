@@ -1,6 +1,7 @@
 [
   {
-    "name": "example.yaml",
+    "name": "example-store/example.yaml",
+    "project": "example-store",
     "document": {
       "openapi": "3.0.3",
       "info": {

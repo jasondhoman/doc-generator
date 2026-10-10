@@ -1,5 +1,5 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
-import { join, parse } from 'node:path'
+import { dirname, join, parse, relative } from 'node:path'
 import { parse as parseYaml } from 'yaml'
 
 interface OpenApiDocument {
@@ -18,19 +18,29 @@ function isOpenApiDocument(value: unknown): value is OpenApiDocument {
     && ('openapi' in value || 'swagger' in value)
 }
 
-const files = (await readdir(sourceDirectory, { withFileTypes: true }))
-  .filter((entry) => entry.isFile() && supportedExtensions.has(parse(entry.name).ext.toLowerCase()))
+async function findSchemaFiles(directory: string): Promise<string[]> {
+  const entries = await readdir(directory, { withFileTypes: true })
+  const files = await Promise.all(entries.map(async (entry) => {
+    const file = join(directory, entry.name)
+    if (entry.isDirectory()) return findSchemaFiles(file)
+    return entry.isFile() && supportedExtensions.has(parse(entry.name).ext.toLowerCase()) ? [file] : []
+  }))
 
-const documents = await Promise.all(files.map(async ({ name }) => {
-  const contents = await readFile(join(sourceDirectory, name), 'utf8')
-  const extension = parse(name).ext.toLowerCase()
+  return files.flat().sort()
+}
+
+const files = await findSchemaFiles(sourceDirectory)
+const documents = await Promise.all(files.map(async (file) => {
+  const name = relative(sourceDirectory, file)
+  const contents = await readFile(file, 'utf8')
+  const extension = parse(file).ext.toLowerCase()
   const document: unknown = extension === '.json' ? JSON.parse(contents) : parseYaml(contents)
 
   if (!isOpenApiDocument(document)) {
     throw new Error(`${name} is not an OpenAPI document (missing "openapi" or "swagger").`)
   }
 
-  return { name, document }
+  return { name, project: dirname(name) === '.' ? 'Root' : dirname(name), document }
 }))
 
 await mkdir(outputDirectory, { recursive: true })
