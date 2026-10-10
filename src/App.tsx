@@ -203,10 +203,11 @@ function Operation({ document, item, copyResult, onCopy }: OperationProps) {
         return <div className="table-row" key={`${resolved.in}-${resolved.name}`}><div><strong>{resolved.name ?? 'Unnamed parameter'}</strong><small>{resolved.in ?? 'unknown'}{resolved.required ? ' · required' : ''}</small></div><code>{schemaLabel(document, resolved.schema)}</code><span>{resolved.description ?? '—'}</span></div>
       })}</div></section>}
       {content && <section><h3>Request body</h3>{Object.entries(content).map(([type, value]) => <div className="content-row" key={type}><code>{type}</code><span>{schemaLabel(document, value.schema)}</span></div>)}</section>}
-      {responses.length > 0 && <section><h3>Responses</h3>{responses.map(([status, response]) => {
+      {responses.length > 0 && <section><h3>Responses</h3><div className="table">{responses.map(([status, response]) => {
         const resolved = resolveRef(document, response) ?? response
-        return <div className="content-row" key={status}><strong>{status}</strong><div><span>{resolved.description ?? 'No description'}</span>{Object.entries(resolved.content ?? {}).map(([type, value]) => <code className="response-schema" key={type}>{type}: {schemaLabel(document, value.schema)}</code>)}</div></div>
-      })}</section>}
+        const schemas = Object.entries(resolved.content ?? {})
+        return <div className="table-row" key={status}><div><strong>{status}</strong></div><code>{schemas.length ? schemas.map(([type, value]) => `${type}: ${schemaLabel(document, value.schema)}`).join(', ') : 'No schema'}</code><span>{resolved.description ?? 'No description'}</span></div>
+      })}</div></section>}
     </article>
   )
 }

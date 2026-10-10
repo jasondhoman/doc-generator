@@ -43,7 +43,6 @@ p { color: #526174; line-height: 1.65; }
 .table-row span, .content-row span { color: #64748b; line-height: 1.45; }
 .content-row { grid-template-columns: 100px 1fr; padding-inline: 0; border-top: 0; }
 .content-row strong { color: #18794e; }
-.response-schema { display: block; margin-top: 5px; }
 .empty-state { max-width: 680px; margin: 18vh auto; padding: 24px; text-align: center; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
 
