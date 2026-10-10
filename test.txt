@@ -1,0 +1,11 @@
+List products
+
+GET /products
+
+Returns products available in the store.
+
+Parameters
+• limit (query, Optional; number): Maximum number of products to return.
+
+Responses
+• 200: A product list.

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "example.yaml",
+    "document": {
+      "openapi": "3.0.3",
+      "info": {
+        "title": "Example Store API",
+        "version": "1.0.0",
+        "description": "A small example schema. Replace this file with your own OpenAPI schemas."
+      },
+      "paths": {
+        "/products": {
+          "get": {
+            "operationId": "listProducts",
+            "summary": "List products",
+            "description": "Returns products available in the store.",
+            "parameters": [
+              {
+                "name": "limit",
+                "in": "query",
+                "description": "Maximum number of products to return.",
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            ],
+            "responses": {
+              "200": {
+                "description": "Product IDs in the requested page.",
+                "content": {
+                  "application/json": {
+                    "schema": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer",
+                        "format": "int64"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "post": {
+            "operationId": "createProduct",
+            "summary": "Create a product",
+            "requestBody": {
+              "required": true,
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "responses": {
+              "201": {
+                "description": "The product was created."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+]
