@@ -6,6 +6,7 @@ import {
 
   operationAnchor,
   resolveRef,
+  responseExample,
   schemaLabel,
 } from '../lib/openapi';
 
@@ -74,11 +75,20 @@ export function Operation({ document, item, copyResult, onCopy }: OperationProps
             {responses.map(([status, response]) => {
               const resolved = resolveRef(document, response) ?? response;
               const schemas = Object.entries(resolved.content ?? {});
+              const examples = schemas.flatMap(([type, value]) => {
+                const example = responseExample(document, value);
+                return example === undefined ? [] : [{ type, example }];
+              });
               return (
                 <div className="table-row" key={status}>
                   <div><strong>{status}</strong></div>
                   <code>{schemas.length ? schemas.map(([type, value]) => `${type}: ${schemaLabel(document, value.schema)}`).join(', ') : 'No schema'}</code>
-                  <span>{resolved.description ?? 'No description'}</span>
+                  <div>
+                    <span>{resolved.description ?? 'No description'}</span>
+                    {examples.map(({ type, example }) => (
+                      <pre className="response-example" key={type}>{JSON.stringify(example, null, 2)}</pre>
+                    ))}
+                  </div>
                 </div>
               );
             })}

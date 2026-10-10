@@ -7,8 +7,14 @@ export type SchemaObject = {
   format?: string;
   enum?: Array<string | number | boolean | null>;
   items?: SchemaObject;
+  properties?: Record<string, SchemaObject>;
+  example?: unknown;
 } & Reference;
-export type MediaTypeObject = { schema?: SchemaObject };
+export type MediaTypeObject = {
+  schema?: SchemaObject;
+  example?: unknown;
+  examples?: Record<string, { value?: unknown }>;
+};
 export type ParameterObject = {
   name?: string;
   in?: string;
@@ -89,6 +95,49 @@ export function schemaLabel(document: OpenApiDocument, schema: SchemaObject | un
   if (resolved.type === 'integer' || resolved.type === 'number')
     return 'number';
   return resolved.type ?? 'object';
+}
+
+function schemaExample(document: OpenApiDocument, schema: SchemaObject | undefined, references = new Set<string>()): unknown {
+  if (!schema)
+    return undefined;
+  if (schema.example !== undefined)
+    return schema.example;
+  if (schema.$ref) {
+    if (references.has(schema.$ref))
+      return undefined;
+    const resolved = resolveRef(document, schema);
+    return schemaExample(document, resolved, new Set([...references, schema.$ref]));
+  }
+  if (schema.enum?.length)
+    return schema.enum[0];
+  if (schema.type === 'array') {
+    const item = schemaExample(document, schema.items, references);
+    return item === undefined ? [] : [item];
+  }
+  if (schema.type === 'object' || schema.properties) {
+    return Object.fromEntries(Object.entries(schema.properties ?? {})
+      .flatMap(([name, property]) => {
+        const value = schemaExample(document, property, references);
+        return value === undefined ? [] : [[name, value]];
+      }));
+  }
+  if (schema.type === 'boolean')
+    return true;
+  if (schema.type === 'integer' || schema.type === 'number')
+    return 0;
+  if (schema.type === 'string')
+    return 'string';
+  return undefined;
+}
+
+export function responseExample(document: OpenApiDocument, mediaType: MediaTypeObject): unknown {
+  if (mediaType.example !== undefined)
+    return mediaType.example;
+
+  const namedExample = Object.values(mediaType.examples ?? {})
+    .find(example => example.value !== undefined)
+    ?.value;
+  return namedExample ?? schemaExample(document, mediaType.schema);
 }
 
 export function collectOperations(document: OpenApiDocument): CollectedOperation[] {

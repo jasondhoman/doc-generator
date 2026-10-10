@@ -6,6 +6,7 @@ import {
   endpointTitle,
 
   resolveRef,
+  responseExample,
   schemaLabel,
 } from '../lib/openapi';
 
@@ -16,7 +17,7 @@ type ParameterRow = {
   type: string;
   description: string;
 };
-type SchemaRow = { type: string; schema: string };
+type SchemaRow = { type: string; schema: string; example?: unknown };
 type ResponseRow = { status: string; description: string; schemas: SchemaRow[] };
 export type EndpointDocumentation = {
   title: string;
@@ -46,7 +47,7 @@ export function buildEndpointDocumentation(document: OpenApiDocument, item: Coll
       status,
       description: resolved.description ?? 'No description',
       schemas: Object.entries(resolved.content ?? {})
-        .map(([type, value]) => ({ type, schema: schemaLabel(document, value.schema) })),
+        .map(([type, value]) => ({ type, schema: schemaLabel(document, value.schema), example: responseExample(document, value) })),
     };
   });
 
@@ -125,6 +126,7 @@ export function WordEndpointDocumentation({ document }: { document: EndpointDocu
                         :
                         {' '}
                         {schema.schema}
+                        {schema.example !== undefined && <pre>{JSON.stringify(schema.example, null, 2)}</pre>}
                       </li>
                     ))}
                   </ul>
@@ -146,7 +148,7 @@ export function renderEndpointDocumentation(document: OpenApiDocument, item: Col
     endpointDocument.description,
     endpointDocument.parameters.length && `Parameters\n${endpointDocument.parameters.map(({ name, location, required, type, description }) => `• ${name} (${location}, ${required}; ${type}): ${description}`).join('\n')}`,
     endpointDocument.requestBodies.length && `Request body\n${endpointDocument.requestBodies.map(({ type, schema }) => `• ${type}: ${schema}`).join('\n')}`,
-    endpointDocument.responses.length && `Responses\n${endpointDocument.responses.map(({ status, description, schemas }) => `• ${status}: ${description}${schemas.length ? ` (${schemas.map(({ type, schema }) => `${type}: ${schema}`).join(', ')})` : ''}`).join('\n')}`,
+    endpointDocument.responses.length && `Responses\n${endpointDocument.responses.map(({ status, description, schemas }) => `• ${status}: ${description}${schemas.length ? ` (${schemas.map(({ type, schema, example }) => `${type}: ${schema}${example === undefined ? '' : ` = ${JSON.stringify(example)}`}`).join(', ')})` : ''}`).join('\n')}`,
   ].filter(Boolean).join('\n\n');
 
   return {

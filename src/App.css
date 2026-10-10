@@ -215,6 +215,16 @@ p {
 .content-row strong {
   color: #18794e;
 }
+.response-example {
+  margin: 8px 0 0;
+  padding: 10px;
+  overflow-x: auto;
+  border-radius: 4px;
+  color: #1e293b;
+  background: #f1f5f9;
+  font-size: 12px;
+  line-height: 1.45;
+}
 .empty-state {
   max-width: 680px;
   margin: 18vh auto;
