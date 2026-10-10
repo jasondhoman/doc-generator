@@ -61,95 +61,76 @@ export function buildEndpointDocumentation(document: OpenApiDocument, item: Coll
   };
 }
 
+function formatListValue(value: string | undefined): string {
+  return value?.trim() ? value.trim() : '';
+}
+
 export function WordEndpointDocumentation({ document }: { document: EndpointDocumentation }) {
+  const payload = formatListValue(document.requestBodies.map(body => `${body.type}: ${body.schema}`).join('; '));
+  const headerParameters = document.parameters.filter(parameter => parameter.location.toLowerCase() === 'header');
+  const payloadFromParameters = document.parameters
+    .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
+    .map(parameter => `${parameter.name} (${parameter.type})`)
+    .join(', ');
+  const requestHeaders = formatListValue(headerParameters.map(parameter => `${parameter.name} (${parameter.type})`).join(', '));
+  const requestBody = formatListValue(document.requestBodies.map(body => `${body.type}: ${body.schema}`).join('; '));
+  const responseContentType = formatListValue(document.responses.flatMap(response => response.schemas.map(schema => schema.type)).join(', '));
+  const response = formatListValue(document.responses.map(({ status, description, schemas }) => `${status}: ${description}${schemas.length ? ` (${schemas.map(({ type, schema, example }) => `${type}: ${schema}${example === undefined ? '' : ` = ${JSON.stringify(example)}`}`).join(', ')})` : ''}`).join('; '));
+
+  const rows = [
+    { label: 'Endpoint Path', value: document.endpoint.replace(/^[A-Z]+\s+/, '') },
+    { label: 'HTTP Method', value: document.endpoint.split(' ')[0] },
+    { label: 'Payload', value: payload || payloadFromParameters },
+    { label: 'Request Header', value: requestHeaders },
+    { label: 'Request Body', value: requestBody },
+    { label: 'Response Content Type', value: responseContentType },
+    { label: 'Response', value: response },
+  ];
+
   return (
-    <>
-      <h1>{document.title}</h1>
-      <p><strong>{document.endpoint}</strong></p>
+    <div>
       <p>{document.description}</p>
-      {document.parameters.length > 0 && (
-        <>
-          <h2>Parameters</h2>
-          <table border={1} cellPadding={6} cellSpacing={0}>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Location</th>
-                <th>Required</th>
-                <th>Type</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              {document.parameters.map(parameter => (
-                <tr key={`${parameter.location}-${parameter.name}`}>
-                  <td>{parameter.name}</td>
-                  <td>{parameter.location}</td>
-                  <td>{parameter.required}</td>
-                  <td>{parameter.type}</td>
-                  <td>{parameter.description}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-      {document.requestBodies.length > 0 && (
-        <>
-          <h2>Request body</h2>
-          <ul>
-            {document.requestBodies.map(body => (
-              <li key={body.type}>
-                <strong>{body.type}</strong>
-                :
-                {' '}
-                {body.schema}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-      {document.responses.length > 0 && (
-        <>
-          <h2>Responses</h2>
-          <ul>
-            {document.responses.map(response => (
-              <li key={response.status}>
-                <strong>{response.status}</strong>
-                :
-                {response.description}
-                {response.schemas.length > 0 && (
-                  <ul>
-                    {response.schemas.map(schema => (
-                      <li key={schema.type}>
-                        <strong>{schema.type}</strong>
-                        :
-                        {' '}
-                        {schema.schema}
-                        {schema.example !== undefined && <pre>{JSON.stringify(schema.example, null, 2)}</pre>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </>
+      <ul>
+        {rows.map(row => (
+          <li key={row.label}>
+            <strong>{row.label}:</strong>
+            {' '}
+            {row.value}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
 export function renderEndpointDocumentation(document: OpenApiDocument, item: CollectedOperation): { html: string; plain: string } {
   const endpointDocument = buildEndpointDocumentation(document, item);
-  const plain = [
-    endpointDocument.title,
-    endpointDocument.endpoint,
+  const payload = formatListValue(endpointDocument.requestBodies.map(body => `${body.type}: ${body.schema}`).join('; '));
+  const payloadFromParameters = formatListValue(endpointDocument.parameters
+    .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
+    .map(parameter => `${parameter.name} (${parameter.type})`)
+    .join(', '));
+  const requestHeaders = formatListValue(endpointDocument.parameters
+    .filter(parameter => parameter.location.toLowerCase() === 'header')
+    .map(parameter => `${parameter.name} (${parameter.type})`)
+    .join(', '));
+  const requestBody = formatListValue(endpointDocument.requestBodies.map(body => `${body.type}: ${body.schema}`).join('; '));
+  const responseContentType = formatListValue(endpointDocument.responses.flatMap(response => response.schemas.map(schema => schema.type)).join(', '));
+  const response = formatListValue(endpointDocument.responses.map(({ status, description, schemas }) => `${status}: ${description}${schemas.length ? ` (${schemas.map(({ type, schema, example }) => `${type}: ${schema}${example === undefined ? '' : ` = ${JSON.stringify(example)}`}`).join(', ')})` : ''}`).join('; '));
+
+  const lines = [
     endpointDocument.description,
-    endpointDocument.parameters.length && `Parameters\n${endpointDocument.parameters.map(({ name, location, required, type, description }) => `• ${name} (${location}, ${required}; ${type}): ${description}`).join('\n')}`,
-    endpointDocument.requestBodies.length && `Request body\n${endpointDocument.requestBodies.map(({ type, schema }) => `• ${type}: ${schema}`).join('\n')}`,
-    endpointDocument.responses.length && `Responses\n${endpointDocument.responses.map(({ status, description, schemas }) => `• ${status}: ${description}${schemas.length ? ` (${schemas.map(({ type, schema, example }) => `${type}: ${schema}${example === undefined ? '' : ` = ${JSON.stringify(example)}`}`).join(', ')})` : ''}`).join('\n')}`,
-  ].filter(Boolean).join('\n\n');
+    '',
+    `* Endpoint Path: ${endpointDocument.endpoint.replace(/^[A-Z]+\s+/, '')}`,
+    `* HTTP Method: ${endpointDocument.endpoint.split(' ')[0]}`,
+    `* Payload: ${payload || payloadFromParameters}`,
+    `* Request Header: ${requestHeaders}`,
+    `* Request Body: ${requestBody}`,
+    `* Response Content Type: ${responseContentType}`,
+    `* Response: ${response}`,
+  ].filter((line, index, list) => index !== 1 || list[index - 1] !== '');
+
+  const plain = lines.join('\n');
 
   return {
     html: renderToStaticMarkup(<WordEndpointDocumentation document={endpointDocument} />),

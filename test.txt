@@ -1,11 +1,9 @@
-List products
+{description}
 
-GET /products
-
-Returns products available in the store.
-
-Parameters
-• limit (query, Optional; number): Maximum number of products to return.
-
-Responses
-• 200: A product list.
+* Endpoint Path: {url}
+* HTTP Method: {POST | PUT | GET | DELETE }
+* Payload: {payload}
+* Request Header: {request headers | empty string}
+* Request Body: {request body}
+* Response Content Type: {type of response}
+* Response: {response}
