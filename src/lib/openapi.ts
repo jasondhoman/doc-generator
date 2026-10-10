@@ -8,6 +8,8 @@ export type SchemaObject = {
   enum?: Array<string | number | boolean | null>;
   items?: SchemaObject;
   properties?: Record<string, SchemaObject>;
+  required?: string[];
+  description?: string;
   example?: unknown;
 } & Reference;
 export type MediaTypeObject = {
@@ -138,6 +140,16 @@ export function responseExample(document: OpenApiDocument, mediaType: MediaTypeO
     .find(example => example.value !== undefined)
     ?.value;
   return namedExample ?? schemaExample(document, mediaType.schema);
+}
+
+export function schemaProperties(document: OpenApiDocument, schema: SchemaObject | undefined) {
+  const resolved = resolveRef(document, schema) ?? schema;
+  return Object.entries(resolved?.properties ?? {}).map(([name, property]) => ({
+    name,
+    type: schemaLabel(document, property),
+    required: resolved?.required?.includes(name) ?? false,
+    description: property.description ?? '—',
+  }));
 }
 
 export function collectOperations(document: OpenApiDocument): CollectedOperation[] {

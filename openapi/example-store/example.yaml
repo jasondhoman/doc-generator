@@ -42,6 +42,15 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Display name for the product.
+                price:
+                  type: number
+                  description: Price in the store currency.
       responses:
         '201':
           description: The product was created.

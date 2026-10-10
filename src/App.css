@@ -215,6 +215,9 @@ p {
 .content-row strong {
   color: #18794e;
 }
+.request-properties {
+  margin: 10px 0 18px;
+}
 .response-example {
   margin: 8px 0 0;
   padding: 10px;

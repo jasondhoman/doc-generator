@@ -8,6 +8,7 @@ import {
   resolveRef,
   responseExample,
   schemaLabel,
+  schemaProperties,
 } from '../lib/openapi';
 
 export type CopyStatus = 'copied' | 'failed';
@@ -60,12 +61,31 @@ export function Operation({ document, item, copyResult, onCopy }: OperationProps
       {content && (
         <section>
           <h3>Request body</h3>
-          {Object.entries(content).map(([type, value]) => (
-            <div className="content-row" key={type}>
-              <code>{type}</code>
-              <span>{schemaLabel(document, value.schema)}</span>
-            </div>
-          ))}
+          {Object.entries(content).map(([type, value]) => {
+            const properties = schemaProperties(document, value.schema);
+            return (
+              <div key={type}>
+                <div className="content-row">
+                  <code>{type}</code>
+                  <span>{schemaLabel(document, value.schema)}</span>
+                </div>
+                {properties.length > 0 && (
+                  <div className="table request-properties">
+                    {properties.map(property => (
+                      <div className="table-row" key={property.name}>
+                        <div>
+                          <strong>{property.name}</strong>
+                          <small>{property.required ? 'required' : 'optional'}</small>
+                        </div>
+                        <code>{property.type}</code>
+                        <span>{property.description}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </section>
       )}
       {responses.length > 0 && (
