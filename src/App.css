@@ -11,10 +11,11 @@ header {
 .brand { color: white; font-size: 19px; font-weight: 700; text-decoration: none; letter-spacing: -.02em; }
 select { min-width: 180px; padding: 7px 30px 7px 10px; border: 1px solid #526174; border-radius: 5px; color: #e8eef7; background: #24354c; }
 .layout { display: grid; grid-template-columns: 280px minmax(0, 860px); max-width: 1240px; margin: 0 auto; }
-aside { min-height: calc(100vh - 64px); padding: 30px 20px; border-right: 1px solid #e2e8f0; background: #fff; }
+aside { min-width: 0; min-height: calc(100vh - 64px); padding: 30px 20px; border-right: 1px solid #e2e8f0; background: #fff; }
 .sidebar-title, .eyebrow { margin: 0 0 12px; color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 nav { display: grid; gap: 3px; }
-nav a { display: flex; align-items: center; gap: 9px; padding: 8px; border-radius: 5px; color: #475569; font-size: 13px; text-decoration: none; }
+nav a { display: flex; min-width: 0; align-items: center; gap: 9px; padding: 8px; border-radius: 5px; color: #475569; font-size: 13px; text-decoration: none; }
+nav a span:last-child { min-width: 0; overflow-wrap: anywhere; }
 nav a:hover { background: #f1f5f9; color: #0f172a; }
 main { padding: 52px 56px 96px; }
 .intro { padding-bottom: 38px; border-bottom: 1px solid #e2e8f0; }
