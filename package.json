@@ -1,15 +1,16 @@
 {
   "name": "docgenerator",
-  "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "version": "0.0.0",
+  "private": true,
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "docs": "tsx scripts/generate-openapi-docs.ts",
     "dev": "pnpm run docs && vite",
     "build": "pnpm run docs && vite build",
     "typecheck": "tsc --noEmit",
-    "lint": "oxlint",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -18,10 +19,13 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@antfu/eslint-config": "^9.5.1",
     "@types/node": "^26.6.5",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^10.9.1",
+    "eslint-plugin-format": "^2.0.1",
     "oxlint": "^1.81.0",
     "tsx": "^4.23.15",
     "typescript": "6.0.2",
