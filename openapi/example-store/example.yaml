@@ -3,12 +3,16 @@ info:
   title: Example Store API
   version: 1.0.0
   description: A small example schema. Replace this file with your own OpenAPI schemas.
+tags:
+  - name: Products
 paths:
   /products:
     get:
       operationId: listProducts
       summary: List products
       description: Returns products available in the store.
+      tags:
+        - Products
       parameters:
         - name: limit
           in: query
@@ -36,6 +40,8 @@ paths:
     post:
       operationId: createProduct
       summary: Create a product
+      tags:
+        - Products
       requestBody:
         required: true
         content:

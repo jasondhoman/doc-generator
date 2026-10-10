@@ -33,6 +33,7 @@ export type OperationObject = {
   operationId?: string;
   summary?: string;
   description?: string;
+  tags?: string[];
   parameters?: ParameterObject[];
   requestBody?: RequestBodyObject;
   responses?: Record<string, ResponseObject>;
@@ -46,6 +47,7 @@ export type OpenApiDocument = {
   openapi?: string;
   swagger?: string;
   info?: { title?: string; version?: string; description?: string };
+  tags?: Array<{ name: string }>;
   paths?: Record<string, PathItem>;
 } & Record<string, unknown>;
 export type GeneratedDocument = { name: string; project: string; document: OpenApiDocument };
@@ -168,6 +170,22 @@ export function collectOperations(document: OpenApiDocument): CollectedOperation
         : [];
     }),
   );
+}
+
+export function groupOperationsByTag(document: OpenApiDocument, operations: CollectedOperation[]): Array<[string, CollectedOperation[]]> {
+  const groups = new Map<string, CollectedOperation[]>();
+  document.tags?.forEach(({ name }) => groups.set(name, []));
+
+  operations.forEach((operation) => {
+    const tags = operation.operation.tags?.filter(Boolean);
+    (tags?.length ? tags : ['Untagged']).forEach((tag) => {
+      const group = groups.get(tag) ?? [];
+      group.push(operation);
+      groups.set(tag, group);
+    });
+  });
+
+  return [...groups].filter(([, taggedOperations]) => taggedOperations.length > 0);
 }
 
 export function operationAnchor(item: CollectedOperation): string {

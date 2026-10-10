@@ -7,6 +7,7 @@ import { copyEndpointDocumentation } from './lib/clipboard';
 import {
   collectOperations,
   endpointTitle,
+  groupOperationsByTag,
   isGeneratedDocument,
   operationAnchor,
 } from './lib/openapi';
@@ -36,6 +37,7 @@ function App() {
 
   const selected = documents.find(({ name }) => name === selectedName);
   const operations = useMemo(() => selected ? collectOperations(selected.document) : [], [selected]);
+  const tagGroups = useMemo(() => selected ? groupOperationsByTag(selected.document, operations) : [], [selected, operations]);
   const projectGroups = useMemo(() => documents.reduce<Record<string, GeneratedDocument[]>>((groups, document) => {
     groups[document.project] ??= [];
     groups[document.project].push(document);
@@ -103,11 +105,16 @@ function App() {
         <aside>
           <p className="sidebar-title">Endpoints</p>
           <nav>
-            {operations.map(item => (
-              <a href={`#${operationAnchor(item)}`} key={`${item.method}-${item.path}`}>
-                <span className={`method method-${item.method}`}>{item.method}</span>
-                <span>{endpointTitle(item)}</span>
-              </a>
+            {tagGroups.map(([tag, taggedOperations]) => (
+              <section className="tag-group" key={tag}>
+                <p className="tag-title">{tag}</p>
+                {taggedOperations.map(item => (
+                  <a href={`#${operationAnchor(item)}`} key={`${tag}-${item.method}-${item.path}`}>
+                    <span className={`method method-${item.method}`}>{item.method}</span>
+                    <span>{endpointTitle(item)}</span>
+                  </a>
+                ))}
+              </section>
             ))}
           </nav>
         </aside>
