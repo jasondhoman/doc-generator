@@ -11,6 +11,9 @@ export type SchemaObject = {
   required?: string[];
   description?: string;
   example?: unknown;
+  allOf?: SchemaObject[];
+  oneOf?: SchemaObject[];
+  anyOf?: SchemaObject[];
 } & Reference;
 export type MediaTypeObject = {
   schema?: SchemaObject;
@@ -24,7 +27,7 @@ export type ParameterObject = {
   description?: string;
   schema?: SchemaObject;
 } & Reference;
-export type RequestBodyObject = { content?: Record<string, MediaTypeObject> };
+export type RequestBodyObject = { content?: Record<string, MediaTypeObject> } & Reference;
 export type ResponseObject = {
   description?: string;
   content?: Record<string, MediaTypeObject>;
@@ -114,6 +117,15 @@ function schemaExample(document: OpenApiDocument, schema: SchemaObject | undefin
   }
   if (schema.enum?.length)
     return schema.enum[0];
+  if (schema.allOf?.length) {
+    const parts = schema.allOf.map(part => schemaExample(document, part, references));
+    return parts.every(part => part === undefined || isRecord(part))
+      ? Object.assign({}, ...parts)
+      : parts.find(part => part !== undefined);
+  }
+  const variant = schema.oneOf?.[0] ?? schema.anyOf?.[0];
+  if (variant)
+    return schemaExample(document, variant, references);
   if (schema.type === 'array') {
     const item = schemaExample(document, schema.items, references);
     return item === undefined ? [] : [item];

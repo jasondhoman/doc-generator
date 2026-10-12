@@ -39,8 +39,8 @@ export function buildEndpointDocumentation(document: OpenApiDocument, item: Coll
       description: resolved.description ?? '—',
     };
   });
-  const requestBodies = Object.entries(item.operation.requestBody?.content ?? {})
-    .map(([type, value]) => ({ type, schema: schemaLabel(document, value.schema) }));
+  const requestBodies = Object.entries((resolveRef(document, item.operation.requestBody) ?? item.operation.requestBody)?.content ?? {})
+    .map(([type, value]) => ({ type, schema: schemaLabel(document, value.schema), example: responseExample(document, value) }));
   const responses = Object.entries(item.operation.responses ?? {}).map(([status, response]) => {
     const resolved = resolveRef(document, response) ?? response;
     return {
@@ -68,14 +68,21 @@ function jsonObject(entries: Array<[string, string]>): string {
   return JSON.stringify(Object.fromEntries(entries), null, 2);
 }
 
+function requestBodyExample(bodies: SchemaRow[]): string {
+  const example = bodies.find(body => body.example !== undefined)?.example;
+  return example === undefined ? '{}' : JSON.stringify(example, null, 2);
+}
+
 export function WordEndpointDocumentation({ document }: { document: EndpointDocumentation }) {
-  const payload = jsonObject(document.parameters
-    .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
-    .map(parameter => [parameter.name, parameter.type]));
+  const requestBody = requestBodyExample(document.requestBodies);
+  const payload = requestBody === '{}'
+    ? jsonObject(document.parameters
+        .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
+        .map(parameter => [parameter.name, parameter.type]))
+    : requestBody;
   const requestHeaders = jsonObject(document.parameters
     .filter(parameter => parameter.location.toLowerCase() === 'header')
     .map(parameter => [parameter.name, parameter.type]));
-  const requestBody = jsonObject(document.requestBodies.map(body => [body.type, body.schema]));
   const rows = [
     { label: 'Endpoint Path', value: document.endpoint.replace(/^[A-Z]+\s+/, '') },
     { label: 'HTTP Method', value: document.endpoint.split(' ')[0] },
@@ -94,8 +101,18 @@ export function WordEndpointDocumentation({ document }: { document: EndpointDocu
               {row.label}
             </strong>
             :
-            {' '}
-            {row.value}
+            {['Payload', 'Request Body'].includes(row.label)
+              ? (
+                  <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {row.value}
+                  </pre>
+                )
+              : (
+                  <>
+                    {' '}
+                    {row.value}
+                  </>
+                )}
           </li>
         ))}
       </ul>
@@ -116,13 +133,15 @@ export function WordEndpointDocumentation({ document }: { document: EndpointDocu
 
 export function renderEndpointDocumentation(document: OpenApiDocument, item: CollectedOperation): { html: string; plain: string } {
   const endpointDocument = buildEndpointDocumentation(document, item);
-  const payload = jsonObject(endpointDocument.parameters
-    .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
-    .map(parameter => [parameter.name, parameter.type]));
+  const requestBody = requestBodyExample(endpointDocument.requestBodies);
+  const payload = requestBody === '{}'
+    ? jsonObject(endpointDocument.parameters
+        .filter(parameter => ['query', 'path', 'cookie'].includes(parameter.location.toLowerCase()))
+        .map(parameter => [parameter.name, parameter.type]))
+    : requestBody;
   const requestHeaders = jsonObject(endpointDocument.parameters
     .filter(parameter => parameter.location.toLowerCase() === 'header')
     .map(parameter => [parameter.name, parameter.type]));
-  const requestBody = jsonObject(endpointDocument.requestBodies.map(body => [body.type, body.schema]));
   const responseEntries = endpointDocument.responses.map((response) => {
     const examples = response.schemas
       .filter(schema => schema.example !== undefined)
@@ -133,12 +152,12 @@ export function renderEndpointDocumentation(document: OpenApiDocument, item: Col
   const lines = [
     endpointDocument.description,
     '',
-    `* Endpoint Path: ${endpointDocument.endpoint.replace(/^[A-Z]+\s+/, '')}`,
-    `* HTTP Method: ${endpointDocument.endpoint.split(' ')[0]}`,
-    `* Payload: ${payload}`,
-    `* Request Header: ${requestHeaders}`,
-    `* Request Body: ${requestBody}`,
-    `* Response:\n${responseEntries.map(entry => `  - ${entry}`).join('\n')}`,
+    `• Endpoint Path: ${endpointDocument.endpoint.replace(/^[A-Z]+\s+/, '')}`,
+    `• HTTP Method: ${endpointDocument.endpoint.split(' ')[0]}`,
+    `• Payload: ${payload}`,
+    `• Request Header: ${requestHeaders}`,
+    `• Request Body: ${requestBody}`,
+    `• Response:\n${responseEntries.map(entry => `  - ${entry}`).join('\n')}`,
   ].filter((line, index, list) => index !== 1 || list[index - 1] !== '');
 
   const plain = lines.join('\n');
